@@ -6,11 +6,7 @@ name: Java CI
 on:
   push:
     branches:
-      - main
-  pull_request:
-    branches:
-      - main
-  workflow_dispatch:
+      - master
 
 jobs:
   build:
@@ -37,6 +33,6 @@ jobs:
           RELDATE="$(date +'%Y-%m-%d %H:%M')"
           NAME="Auto-Build $RELDATE"
           TAGNAME="autobuild-$(date +'%Y-%m-%d-%H-%M')"
-          hub release create $(for a in target/HideAndRaySeeksYou-*.jar; do echo -a $a; done) -m "$NAME" -t "main" "$TAGNAME"
+          hub release create $(for a in target/HideAndRaySeeksYou-*.jar; do echo -a $a; done) -m "$NAME" -t "master" "$TAGNAME"
         env:
           GITHUB_TOKEN: ${{ github.token }}
