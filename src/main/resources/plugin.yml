@@ -1,0 +1,10 @@
+name: HideAndRaySeeksYou
+version: '${project.version}'
+main: me.itoncek.rays.hideandrayseeksyou.HideAndRaySeeksYou
+api-version: 1.19
+authors: [ IToncek ]
+description: Hide and Seek plugin for RaysWorks community
+website: https://plugins.itoncek.cf
+commands:
+  start:
+  tag:

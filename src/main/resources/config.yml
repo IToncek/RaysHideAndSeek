@@ -1,0 +1,12 @@
+grace: 20
+no-damage: true
+stick-required: true
+spawn: "0,60,0"
+border:
+  world: "world"
+  starting-size: 50.0
+  end-size: 1.0
+  duration: 20
+  eliminates: true
+  start-after-grace: true
+after-elimination-hunter: true
