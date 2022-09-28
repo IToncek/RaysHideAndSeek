@@ -23,6 +23,8 @@ import java.nio.channels.Channels;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public final class HideAndRaySeeksYou extends JavaPlugin {
 	
@@ -250,43 +252,51 @@ public final class HideAndRaySeeksYou extends JavaPlugin {
 	
 	private void update() {
 		try {
-			URL url = new URL("https://api.github.com/repos/IToncek/RaysHideAndSeek/releases/latest");
-			Scanner sc = new Scanner(url.openStream());
-			StringBuilder sb = new StringBuilder();
-			while (sc.hasNext()) {
-				sb.append(sc.next());
-			}
-			sc.close();
-			JSONObject versions = new JSONObject(sb.toString());
-			AtomicReference<String> versionData = new AtomicReference<>("");
-			AtomicReference<String> downloadLink = new AtomicReference<>("");
-			
-			versions.getJSONArray("assets").forEach(o -> {
-				JSONObject obj = (JSONObject) o;
-				if(obj.getString("name").equals("pom.properties")) {
-					versionData.set(obj.getString("browser_download_url"));
-				} else if(obj.getString("name").endsWith(".jar")) {
-					downloadLink.set(obj.getString("browser_download_url"));
+			final Pattern pattern = Pattern.compile("^[0-9]+m(0?[1-9]|[1][0-2])d(0?[1-9]|[12][0-9]|3[01])[a-zA-Z]$", Pattern.CASE_INSENSITIVE);
+			final Matcher matcher = pattern.matcher(getDescription().getVersion());
+			if(matcher.matches()) {
+				Bukkit.getLogger().info("Dev mode");
+				getServer().getPluginManager().registerEvents(new DevelopementVersion(), plugin);
+				Objects.requireNonNull(getCommand("dev")).setExecutor(new DevelopementVersion());
+			} else {
+				URL url = new URL("https://api.github.com/repos/IToncek/RaysHideAndSeek/releases/latest");
+				Scanner sc = new Scanner(url.openStream());
+				StringBuilder sb = new StringBuilder();
+				while (sc.hasNext()) {
+					sb.append(sc.next());
 				}
-			});
-			
-			URL url1 = new URL(versionData.get());
-			Properties props = new Properties();
-			props.load(url1.openStream());
-			
-			String version = (String) props.get("version");
-			Bukkit.getLogger().info(version);
-			Bukkit.getLogger().info(getDescription().getVersion());
-			if(!version.equals(getDescription().getVersion())) {
-				if(!new File("./plugins/HideAndRaySeeksYou-" + version + ".jar").exists()) {
-					if(new File("./plugins/HideAndRaySeeksYou-" + getDescription().getVersion() + ".jar").exists()) {
-						new File("./plugins/HideAndRaySeeksYou-" + getDescription().getVersion() + ".jar").deleteOnExit();
-					} else {
-						Bukkit.getLogger().info("Didn't find the old plugin file");
+				sc.close();
+				JSONObject versions = new JSONObject(sb.toString());
+				AtomicReference<String> versionData = new AtomicReference<>("");
+				AtomicReference<String> downloadLink = new AtomicReference<>("");
+				
+				versions.getJSONArray("assets").forEach(o -> {
+					JSONObject obj = (JSONObject) o;
+					if(obj.getString("name").equals("pom.properties")) {
+						versionData.set(obj.getString("browser_download_url"));
+					} else if(obj.getString("name").endsWith(".jar")) {
+						downloadLink.set(obj.getString("browser_download_url"));
 					}
-					try (FileOutputStream fileOutputStream = new FileOutputStream("./plugins/HideAndRaySeeksYou-" + version + ".jar")) {
-						fileOutputStream.getChannel().transferFrom(Channels.newChannel(new URL(downloadLink.get()).openStream()), 0, Long.MAX_VALUE);
-						getServer().spigot().restart();
+				});
+				
+				URL url1 = new URL(versionData.get());
+				Properties props = new Properties();
+				props.load(url1.openStream());
+				
+				String version = (String) props.get("version");
+				Bukkit.getLogger().info(version);
+				Bukkit.getLogger().info(getDescription().getVersion());
+				if(!version.equals(getDescription().getVersion())) {
+					if(!new File("./plugins/HideAndRaySeeksYou-" + version + ".jar").exists()) {
+						if(new File("./plugins/HideAndRaySeeksYou-" + getDescription().getVersion() + ".jar").exists()) {
+							new File("./plugins/HideAndRaySeeksYou-" + getDescription().getVersion() + ".jar").deleteOnExit();
+						} else {
+							Bukkit.getLogger().info("Didn't find the old plugin file");
+						}
+						try (FileOutputStream fileOutputStream = new FileOutputStream("./plugins/HideAndRaySeeksYou-" + version + ".jar")) {
+							fileOutputStream.getChannel().transferFrom(Channels.newChannel(new URL(downloadLink.get()).openStream()), 0, Long.MAX_VALUE);
+							getServer().spigot().restart();
+						}
 					}
 				}
 			}
