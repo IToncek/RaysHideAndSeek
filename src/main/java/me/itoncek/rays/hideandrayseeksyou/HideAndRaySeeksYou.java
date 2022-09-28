@@ -14,9 +14,15 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONObject;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.net.URL;
+import java.nio.channels.Channels;
 import java.security.SecureRandom;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 public final class HideAndRaySeeksYou extends JavaPlugin {
 	
@@ -233,12 +239,60 @@ public final class HideAndRaySeeksYou extends JavaPlugin {
 	
 	@Override
 	public void onEnable() {
+		update();
 		// Plugin startup logic
 		saveDefaultConfig();
 		plugin = this;
 		config = getConfig();
 		Objects.requireNonNull(getCommand("start")).setExecutor(new StartCommand());
 		Objects.requireNonNull(getCommand("tag")).setExecutor(new TagCommand());
+	}
+	
+	private void update() {
+		try {
+			URL url = new URL("https://api.github.com/repos/IToncek/RaysHideAndSeek/releases/latest");
+			Scanner sc = new Scanner(url.openStream());
+			StringBuilder sb = new StringBuilder();
+			while (sc.hasNext()) {
+				sb.append(sc.next());
+			}
+			sc.close();
+			JSONObject versions = new JSONObject(sb.toString());
+			AtomicReference<String> versionData = new AtomicReference<>("");
+			AtomicReference<String> downloadLink = new AtomicReference<>("");
+			
+			versions.getJSONArray("assets").forEach(o -> {
+				JSONObject obj = (JSONObject) o;
+				if(obj.getString("name").equals("pom.properties")) {
+					versionData.set(obj.getString("browser_download_url"));
+				} else if(obj.getString("name").endsWith(".jar")) {
+					downloadLink.set(obj.getString("browser_download_url"));
+				}
+			});
+			
+			URL url1 = new URL(versionData.get());
+			Properties props = new Properties();
+			props.load(url1.openStream());
+			
+			String version = (String) props.get("version");
+			Bukkit.getLogger().info(version);
+			Bukkit.getLogger().info(getDescription().getVersion());
+			if(!version.equals(getDescription().getVersion())) {
+				if(!new File("./plugins/HideAndRaySeeksYou-" + version + ".jar").exists()) {
+					if(new File("./plugins/HideAndRaySeeksYou-" + getDescription().getVersion() + ".jar").exists()) {
+						new File("./plugins/HideAndRaySeeksYou-" + getDescription().getVersion() + ".jar").deleteOnExit();
+					} else {
+						Bukkit.getLogger().info("Didn't find the old plugin file");
+					}
+					try (FileOutputStream fileOutputStream = new FileOutputStream("./plugins/HideAndRaySeeksYou-" + version + ".jar")) {
+						fileOutputStream.getChannel().transferFrom(Channels.newChannel(new URL(downloadLink.get()).openStream()), 0, Long.MAX_VALUE);
+						getServer().spigot().restart();
+					}
+				}
+			}
+		} catch (Exception e) {
+			Bukkit.getLogger().throwing("HideAndRaySeeksYou", "update()", e);
+		}
 	}
 	
 	@Override
