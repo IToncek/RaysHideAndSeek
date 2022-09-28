@@ -32,9 +32,18 @@ public final class HideAndRaySeeksYou extends JavaPlugin {
 	public static ArrayList<Player> alive = new ArrayList<>();
 	public static HideAndRaySeeksYou plugin;
 	public static FileConfiguration config;
+	public static BukkitRunnable borderManager = new BukkitRunnable() {
+		@Override
+		public void run() {
+			Objects.requireNonNull(Bukkit.getWorld(config.getString("border.world", "world"))).getWorldBorder().setSize(config.getDouble("border.end-size"), config.getLong("border.duration"));
+		}
+	};
 	public static BukkitRunnable gameManager = new BukkitRunnable() {
 		@Override
 		public void run() {
+			if(config.getBoolean("border.start-after-grace")) {
+				borderManager.run();
+			}
 			plugin.getServer().getPluginManager().registerEvents(new KOListener(), plugin);
 			hunters.forEach((p) -> {
 				for (PotionEffect effect : p.getActivePotionEffects()) {
@@ -63,6 +72,9 @@ public final class HideAndRaySeeksYou extends JavaPlugin {
 				p.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, Integer.MAX_VALUE, 255, true));
 				p.addPotionEffect(new PotionEffect(PotionEffectType.JUMP, Integer.MAX_VALUE, 255, true));
 			});
+			if(!config.getBoolean("border.start-after-grace")) {
+				borderManager.run();
+			}
 			gameManager.runTaskLater(plugin, config.getInt("grace") * 20L);
 		}
 	};
@@ -99,10 +111,7 @@ public final class HideAndRaySeeksYou extends JavaPlugin {
 					p.teleportAsync(center(spawn.toHighestLocation(HeightMap.WORLD_SURFACE)));
 				}
 			}
-			for (World world : Bukkit.getWorlds()) {
-				world.getWorldBorder().setSize(config.getDouble("border.starting-size"));
-				world.setDifficulty(Difficulty.PEACEFUL);
-			}
+			Objects.requireNonNull(Bukkit.getWorld(config.getString("border.world", "world"))).getWorldBorder().setSize(config.getDouble("border.starting-size"));
 			new BukkitRunnable() {
 				@Override
 				public void run() {
