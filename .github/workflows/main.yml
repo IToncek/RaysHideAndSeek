@@ -51,7 +51,7 @@ jobs:
       with:
         category: "/language:${{matrix.language}}"
         
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: artifact
         path: target/*.jar
